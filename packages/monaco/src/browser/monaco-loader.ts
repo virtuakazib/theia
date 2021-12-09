@@ -195,31 +195,63 @@ function createMessageBundle(bundle: Record<string, Record<string, string>>): Re
 }
 
 export function monkeyPatchBetterTokenHandling(): void {
+    // Cf. https://github.com/theia-ide/vscode/blob/e930e4240ee604757efbd7fd621b77b75568f95d/src/vs/platform/theme/common/tokenClassificationRegistry.ts#L508-L535
+    // TODO: Remove in favor of full implementation of the token type contribution points.
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/workbench/services/themes/common/colorExtensionPoint.ts
+    const defaultTokenMappings = new Map<string, string[]>([
+        ['keyword', ['keyword.control']], ['number', ['constant.numeric']],
+        ['regexp', ['constant.regexp']], ['operator', ['keyword.operator']],
+        ['namepace', ['entity.name.namespace']], ['type', ['entity.name.type', 'support.type']],
+        ['struct', ['entity.name.type.struct']], ['class', ['entity.name.type.class', 'support.class']],
+        ['interface', ['entity.name.type.interface']], ['enum', ['entity.name.type.enum']],
+        ['typeParameter', ['entity.name.type.parameter']], ['function', ['support.function']],
+        ['member', ['method']], ['method', ['entity.name.function.member', 'support.function']],
+        ['macro', ['entity.name.function.preprocessor']], ['variable', ['variable.other.readwrite', 'entity.name.variable']],
+        ['parameter', ['variable.parameter']], ['property', ['variable.other.property']],
+        ['enumMember', ['variable.other.enummember']], ['event', ['variable.other.event']],
+        ['decorator', ['entity.name.decorator', 'entity.name.function']], ['label', []]
+    ]);
+    // Ensure that code backtracks only once - attempts during a backtrack should not themselves backtrack.
+    let overrideCheckInProgress = false;
     // Overrides https://github.com/theia-ide/vscode/blob/e930e4240ee604757efbd7fd621b77b75568f95d/src/vs/editor/common/modes/supports/tokenization.ts#L346-L368
     monaco.services.tokenization.ThemeTrieElement.prototype.match = function (
         this: monaco.services.tokenization.ThemeTrieElement,
-        token: string
+        token: string,
     ): monaco.services.tokenization.ThemeTrieElementRule {
-        if (token === '') {
-            return this._mainRule;
-        }
+        let usingOverride = false;
+        try {
+            if (token === '') {
+                return this._mainRule;
+            }
 
-        const dotIndex = token.indexOf('.');
-        let head: string;
-        let tail: string;
-        if (dotIndex === -1) {
-            head = token;
-            tail = '';
-        } else {
-            head = token.substring(0, dotIndex);
-            tail = token.substring(dotIndex + 1);
-        }
+            const dotIndex = token.indexOf('.');
+            let head: string;
+            let tail: string;
+            if (dotIndex === -1) {
+                head = token;
+                tail = '';
+            } else {
+                head = token.substring(0, dotIndex);
+                tail = token.substring(dotIndex + 1);
+            }
 
-        const child = this._children.get(head);
-        if (typeof child !== 'undefined') {
-            return child.match(tail);
-        } else {
-            // OVERRIDE: Fall back to a breadth-first check of the tree to check for a match for `head`
+            // OVERRIDE: Check default mappings
+            if (!overrideCheckInProgress) {
+                usingOverride = overrideCheckInProgress = true;
+                if (defaultTokenMappings.has(head)) {
+                    for (const option of defaultTokenMappings.get(head)!) {
+                        const rule = this.match(option);
+                        if (rule.metadata !== this._mainRule.metadata) {
+                            return rule;
+                        }
+                    }
+                }
+            }
+            const child = this._children.get(head);
+            if (typeof child !== 'undefined') {
+                return child.match(tail);
+            }
+            // OVERRIDE: Finally, try a breadth-first search of the tree for a match.
             const candidates = [...this._children.values()];
             for (const candidate of candidates) {
                 if (candidate._children.has(head)) {
@@ -228,9 +260,13 @@ export function monkeyPatchBetterTokenHandling(): void {
                     candidates.push(...candidate._children.values());
                 }
             }
-        }
 
-        return this._mainRule;
+            return this._mainRule;
+        } finally {
+            if (usingOverride) {
+                overrideCheckInProgress = false;
+            }
+        }
     };
 }
 
@@ -259,10 +295,9 @@ export function monkeyPatchTokenThemeDefaults(): void {
         for (let i = 0, len = parsedThemeRules.length; i < len; i++) {
             const rule = parsedThemeRules[i];
             root.insert(rule.token, rule.fontStyle, colorMap.getId(rule.foreground), colorMap.getId(rule.background));
+            // OVERRIDE: At the root, return an empty rule. This allows the grammar-set color to persist.
+            root._mainRule = new monaco.services.tokenization.ThemeTrieElementRule(monaco.modes.FontStyle.None, monaco.modes.ColorId.None, monaco.modes.ColorId.None);
         }
-
-        // OVERRIDE: At the root, return an empty rule. This allows the grammar-set color to persist.
-        root._mainRule = new monaco.services.tokenization.ThemeTrieElementRule(monaco.modes.FontStyle.None, monaco.modes.ColorId.None, monaco.modes.ColorId.None);
 
         return new monaco.services.tokenization.TokenTheme(colorMap, root);
     };

@@ -981,6 +981,7 @@ declare module monaco.services {
         }
 
         export class ThemeTrieElementRule {
+            metadata: number;
             constructor(fontStyle: FontStyle, foreground: monaco.modes.ColorId, background: monaco.modes.ColorId)
         }
 
