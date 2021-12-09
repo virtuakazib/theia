@@ -15,12 +15,14 @@
  ********************************************************************************/
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { clearMonacoQuickAccessProviders, loadMonaco, loadVsRequire } from './monaco-loader';
+import { clearMonacoQuickAccessProviders, loadMonaco, loadVsRequire, monkeyPatchBetterTokenHandling, monkeyPatchTokenThemeDefaults } from './monaco-loader';
 
 export { ContainerModule };
 
 export default loadVsRequire(window)
     .then(vsRequire => loadMonaco(vsRequire))
     .then(() => clearMonacoQuickAccessProviders())
+    .then(() => monkeyPatchBetterTokenHandling())
+    .then(() => monkeyPatchTokenThemeDefaults())
     .then(() => import('./monaco-frontend-module'))
     .then(module => module.default);

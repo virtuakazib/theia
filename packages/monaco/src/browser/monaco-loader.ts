@@ -108,7 +108,8 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/common/path',
                 'vs/editor/common/model/textModel',
                 'vs/base/common/strings',
-                'vs/base/common/async'
+                'vs/base/common/async',
+                'vs/editor/common/modes/supports/tokenization'
             ], (commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
                 keyCodes: any, mime: any, editorExtensions: any, simpleServices: any,
@@ -125,7 +126,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 contextKey: any, contextKeyService: any,
                 wordHelper: any,
                 error: any, path: any,
-                textModel: any, strings: any, async: any) => {
+                textModel: any, strings: any, async: any, tokenization: any) => {
                 const global: any = self;
                 global.monaco.commands = commands;
                 global.monaco.actions = actions;
@@ -133,6 +134,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 global.monaco.services = Object.assign({}, simpleServices, standaloneServices,
                     standaloneLanguages, configuration, configurationModels,
                     resolverService, codeEditorService, codeEditorServiceImpl, markerService, openerService);
+                global.monaco.services.tokenization = Object.assign({}, tokenization);
                 global.monaco.quickInput = Object.assign({}, quickInput, quickAccess, quickAccessBrowser, quickInputPlatform,
                     pickerQuickAccess, standaloneGotoLineQuickAccess, standaloneGotoSymbolQuickAccess);
                 global.monaco.filters = filters;
@@ -190,4 +192,78 @@ function createMessageBundle(bundle: Record<string, Record<string, string>>): Re
         result[fullName] = array;
     }
     return result;
+}
+
+export function monkeyPatchBetterTokenHandling(): void {
+    // Overrides https://github.com/theia-ide/vscode/blob/e930e4240ee604757efbd7fd621b77b75568f95d/src/vs/editor/common/modes/supports/tokenization.ts#L346-L368
+    monaco.services.tokenization.ThemeTrieElement.prototype.match = function (
+        this: monaco.services.tokenization.ThemeTrieElement,
+        token: string
+    ): monaco.services.tokenization.ThemeTrieElementRule {
+        if (token === '') {
+            return this._mainRule;
+        }
+
+        const dotIndex = token.indexOf('.');
+        let head: string;
+        let tail: string;
+        if (dotIndex === -1) {
+            head = token;
+            tail = '';
+        } else {
+            head = token.substring(0, dotIndex);
+            tail = token.substring(dotIndex + 1);
+        }
+
+        const child = this._children.get(head);
+        if (typeof child !== 'undefined') {
+            return child.match(tail);
+        } else {
+            // OVERRIDE: Fall back to a breadth-first check of the tree to check for a match for `head`
+            const candidates = [...this._children.values()];
+            for (const candidate of candidates) {
+                if (candidate._children.has(head)) {
+                    return candidate.match(token);
+                } else {
+                    candidates.push(...candidate._children.values());
+                }
+            }
+        }
+
+        return this._mainRule;
+    };
+}
+
+export function monkeyPatchTokenThemeDefaults(): void {
+    // Overrides https://github.com/theia-ide/vscode/blob/e930e4240ee604757efbd7fd621b77b75568f95d/src/vs/editor/common/modes/supports/tokenization.ts#L101-L147
+    monaco.services.tokenization.TokenTheme.createFromParsedTokenTheme = function resolveParsedTokenThemeRules(
+        parsedThemeRules: monaco.services.tokenization.ParsedTokenThemeRule[], customTokenColors: string[]): monaco.services.tokenization.TokenTheme {
+        // Sort rules lexicographically, and then by index if necessary
+        parsedThemeRules.sort((a, b) => {
+            const r = monaco.services.tokenization.strcmp(a.token, b.token);
+            if (r !== 0) {
+                return r;
+            }
+            return a.index - b.index;
+        });
+
+        const colorMap = new monaco.services.tokenization.ColorMap();
+
+        // start with token colors from custom token themes
+        for (const color of customTokenColors) {
+            colorMap.getId(color);
+        }
+
+        const defaults = new monaco.services.tokenization.ThemeTrieElementRule(monaco.modes.FontStyle.None, monaco.modes.ColorId.None, monaco.modes.ColorId.None);
+        const root = new monaco.services.tokenization.ThemeTrieElement(defaults);
+        for (let i = 0, len = parsedThemeRules.length; i < len; i++) {
+            const rule = parsedThemeRules[i];
+            root.insert(rule.token, rule.fontStyle, colorMap.getId(rule.foreground), colorMap.getId(rule.background));
+        }
+
+        // OVERRIDE: At the root, return an empty rule. This allows the grammar-set color to persist.
+        root._mainRule = new monaco.services.tokenization.ThemeTrieElementRule(monaco.modes.FontStyle.None, monaco.modes.ColorId.None, monaco.modes.ColorId.None);
+
+        return new monaco.services.tokenization.TokenTheme(colorMap, root);
+    };
 }

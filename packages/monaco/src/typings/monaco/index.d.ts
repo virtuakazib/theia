@@ -973,6 +973,57 @@ declare module monaco.services {
         getColorMap(): monaco.color.Color[];
     }
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/modes/supports/tokenization.ts
+    export module tokenization {
+        export function strcmp(a: string, b: string): number;
+        export class ColorMap {
+            public getId(color: string | null): monaco.modes.ColorId
+        }
+
+        export class ThemeTrieElementRule {
+            constructor(fontStyle: FontStyle, foreground: monaco.modes.ColorId, background: monaco.modes.ColorId)
+        }
+
+        export class ParsedTokenThemeRule {
+            _parsedThemeRuleBrand: void;
+
+            readonly token: string;
+            readonly index: number;
+
+            /**
+             * -1 if not set. An or mask of `FontStyle` otherwise.
+             */
+            readonly fontStyle: FontStyle;
+            readonly foreground: string | null;
+            readonly background: string | null;
+
+            constructor(
+                token: string,
+                index: number,
+                fontStyle: number,
+                foreground: string | null,
+                background: string | null,
+            );
+        }
+
+        export class TokenTheme {
+
+            public static createFromRawTokenTheme(source: ITokenThemeRule[], customTokenColors: string[]): TokenTheme;
+
+            public static createFromParsedTokenTheme(source: ParsedTokenThemeRule[], customTokenColors: string[]): TokenTheme;
+
+            constructor(colorMap: ColorMap, root: ThemeTrieElement)
+        }
+
+        export class ThemeTrieElement {
+            _children: Map<string, ThemeTrieElement>;
+            _mainRule: ThemeTrieElementRule;
+            constructor(mainRule: ThemeTrieElementRule);
+            match(token: string): ThemeTrieElementRule;
+            insert(token: string, fontStyle: FontStyle, foreground: ColorId, background: ColorId): void;
+        }
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/modes.ts#L27
     export const enum LanguageId {
         Null = 0,
@@ -2008,6 +2059,13 @@ declare module monaco.modes {
         Italic = 1,
         Bold = 2,
         Underline = 4
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/modes.ts#L82
+    export const enum ColorId {
+        None = 0,
+        DefaultForeground = 1,
+        DefaultBackground = 2
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.23.x/src/vs/editor/common/modes.ts#L148

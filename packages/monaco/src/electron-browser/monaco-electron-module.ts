@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { loadVsRequire, loadMonaco, clearMonacoQuickAccessProviders } from '../browser/monaco-loader';
+import { loadVsRequire, loadMonaco, clearMonacoQuickAccessProviders, monkeyPatchBetterTokenHandling, monkeyPatchTokenThemeDefaults } from '../browser/monaco-loader';
 
 export { ContainerModule };
 
@@ -48,5 +48,7 @@ export default loadVsRequire(global)
         return loadMonaco(vsRequire);
     })
     .then(() => clearMonacoQuickAccessProviders())
+    .then(() => monkeyPatchBetterTokenHandling())
+    .then(() => monkeyPatchTokenThemeDefaults())
     .then(() => import('../browser/monaco-frontend-module'))
     .then(module => module.default);
