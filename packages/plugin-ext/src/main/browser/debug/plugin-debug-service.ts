@@ -29,27 +29,10 @@ import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connec
 import * as theia from '@theia/plugin';
 
 /**
- * Debug adapter contribution registrator.
- */
-export interface PluginDebugAdapterContributionRegistrator {
-    /**
-     * Registers [PluginDebugAdapterContribution](#PluginDebugAdapterContribution).
-     * @param contrib contribution
-     */
-    registerDebugAdapterContribution(contrib: PluginDebugAdapterContribution): Disposable;
-
-    /**
-     * Unregisters [PluginDebugAdapterContribution](#PluginDebugAdapterContribution).
-     * @param debugType the debug type
-     */
-    unregisterDebugAdapterContribution(debugType: string): void;
-}
-
-/**
  * Debug service to work with plugin and extension contributions.
  */
 @injectable()
-export class PluginDebugService implements DebugService, PluginDebugAdapterContributionRegistrator {
+export class PluginDebugService implements DebugService {
 
     protected readonly debuggers: DebuggerContribution[] = [];
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
