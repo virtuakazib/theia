@@ -21,7 +21,7 @@ import { DebugSessionOptions, InternalDebugSessionOptions } from '../debug-sessi
 import { QuickInputService } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 
-interface IDynamicPickItem { label: string, configurationType: string, request: string, providerType: string }
+interface DynamicPickItem { label: string, configurationType: string, request: string, providerType: string }
 
 export interface DebugConfigurationSelectProps {
     manager: DebugConfigurationManager,
@@ -34,9 +34,11 @@ export interface DebugProviderSelectState {
 }
 
 export class DebugConfigurationSelect extends React.Component<DebugConfigurationSelectProps, DebugProviderSelectState> {
-
     protected static readonly SEPARATOR = '──────────';
     protected static readonly PICK = '__PICK__';
+    protected static readonly NO_CONFIGURATION = '__NO_CONF__';
+    protected static readonly ADD_CONFIGURATION = '__ADD_CONF__';
+
     private manager: DebugConfigurationManager;
     private quickInputService: QuickInputService;
 
@@ -47,7 +49,7 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         this.state = {
             providerTypes: [],
         };
-        this.manager.onDidConfigurationProvidersChanged(() => {
+        this.manager.onDidChangeConfigurationProviders(() => {
             this.refreshDebugConfigurations();
         });
     }
@@ -70,12 +72,12 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
 
     protected get currentValue(): string {
         const { current } = this.manager;
-        return current ? InternalDebugSessionOptions.toValue(current) : '__NO_CONF__';
+        return current ? InternalDebugSessionOptions.toValue(current) : DebugConfigurationSelect.NO_CONFIGURATION;
     }
 
     protected readonly setCurrentConfiguration = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.currentTarget.value;
-        if (value === '__ADD_CONF__') {
+        if (value === DebugConfigurationSelect.ADD_CONFIGURATION) {
             this.manager.addConfiguration();
         } else if (value.startsWith(DebugConfigurationSelect.PICK)) {
             const providerType = this.parsePickValue(value);
@@ -101,13 +103,14 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     }
 
     protected async selectDynamicConfigFromQuickPick(providerType: string): Promise<void> {
-        const configurationsOfProviderType = (await this.manager.provideDynamicDebugConfigurations()).find(entry => entry.type === providerType);
+        const configurationsOfProviderType =
+            (await this.manager.provideDynamicDebugConfigurations()).find(entry => entry.type === providerType);
         if (!configurationsOfProviderType) {
             return;
         }
         const { configurations } = configurationsOfProviderType;
 
-        const picks: IDynamicPickItem[] = [];
+        const picks: DynamicPickItem[] = [];
         for (const configuration of configurations) {
             picks.push({
                 label: configuration.name,
@@ -121,12 +124,12 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             return;
         }
 
-        const quickPick = this.quickInputService.createQuickPick<IDynamicPickItem>();
+        const quickPick = this.quickInputService.createQuickPick<DynamicPickItem>();
         quickPick.items = picks;
         quickPick.placeholder = nls.localizeByDefault('Select Launch Configuration');
         quickPick.show();
 
-        const selected: IDynamicPickItem | undefined = await new Promise(resolve => {
+        const selected: DynamicPickItem | undefined = await new Promise(resolve => {
             // If the user presses `Escape` then `quickPick.onDidAccept` will fire
             // and `quickPick.activeItems` will be empty.
             quickPick.onDidAccept(() => {
@@ -140,7 +143,11 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
             return;
         }
 
-        const selectedConfiguration = { name: selected.label, type: selected.configurationType, request: selected.request };
+        const selectedConfiguration = {
+            name: selected.label,
+            type: selected.configurationType,
+            request: selected.request
+        };
         this.manager.current = this.manager.find(selectedConfiguration, undefined, selected.providerType);
     }
 
@@ -156,21 +163,23 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
     };
 
     protected renderOptions(): React.ReactNode {
-        let index = 0;
+        const options: React.ReactNode[] = [];
 
         // Add non dynamic debug configurations
-        const options: React.ReactNode[] = Array.from(this.manager.all, config =>
-            <option key={index++} value={InternalDebugSessionOptions.toValue(config)}>
+        for (const config of this.manager.all) {
+            const value = InternalDebugSessionOptions.toValue(config);
+            options.push(<option key={value} value={value}>
                 {this.toName(config, this.props.isMultiRoot)}
-            </option>
-        );
+            </option>);
+        }
 
         // Add recently used dynamic debug configurations
         const { recentDynamicOptions } = this.manager;
         if (recentDynamicOptions.length > 0) {
-            options.push(<option key={index++} disabled>{DebugConfigurationSelect.SEPARATOR}</option>);
+            options.push(<option key={'recent-configs-sep'} disabled>{DebugConfigurationSelect.SEPARATOR}</option>);
             for (const dynamicOption of recentDynamicOptions) {
-                options.push(<option key={index++} value={InternalDebugSessionOptions.toValue(dynamicOption)}>
+                const value = InternalDebugSessionOptions.toValue(dynamicOption);
+                options.push(<option key={value} value={value}>
                     {this.toName(dynamicOption, this.props.isMultiRoot)} ({dynamicOption.providerType})
                 </option>);
             }
@@ -179,21 +188,30 @@ export class DebugConfigurationSelect extends React.Component<DebugConfiguration
         // Add dynamic configuration types for quick pick selection
         const types = this.state.providerTypes;
         if (types.length > 0) {
-            options.push(<option key={index++} disabled>{DebugConfigurationSelect.SEPARATOR}</option>);
+            options.push(<option key={'dynamic-types-sep'} disabled>{DebugConfigurationSelect.SEPARATOR}</option>);
             for (const type of types) {
-                options.push(<option key={index++} value={this.toPickValue(type)}>{type}...</option>);
+                const value = this.toPickValue(type);
+                options.push(<option key={value} value={value}>{type}...</option>);
             }
         }
 
         if (options.length === 0) {
+            const value = DebugConfigurationSelect.NO_CONFIGURATION;
             options.push(
-                <option key={index++} value='__NO_CONF__'>{nls.localizeByDefault('No Configurations')}
+                <option
+                    key={value}
+                    value={value}>{nls.localizeByDefault('No Configurations')}
                 </option>);
         }
 
         options.push(
-            <option key={index++} disabled>{DebugConfigurationSelect.SEPARATOR}</option>,
-            <option key={index++} value='__ADD_CONF__'>{nls.localizeByDefault('Add Configuration...')}
+            <option
+                key={'add-config-sep'}
+                disabled>{DebugConfigurationSelect.SEPARATOR}
+            </option>,
+            <option
+                key={DebugConfigurationSelect.ADD_CONFIGURATION}
+                value={DebugConfigurationSelect.ADD_CONFIGURATION}>{nls.localizeByDefault('Add Configuration...')}
             </option>
         );
 

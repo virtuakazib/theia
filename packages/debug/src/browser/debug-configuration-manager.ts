@@ -88,7 +88,7 @@ export class DebugConfigurationManager {
         return this.onWillProvideDynamicDebugConfigurationEmitter.event;
     }
 
-    get onDidConfigurationProvidersChanged(): Event<void> {
+    get onDidChangeConfigurationProviders(): Event<void> {
         return this.debug.onDidChangeDebugConfigurationProviders;
     }
 
@@ -175,13 +175,12 @@ export class DebugConfigurationManager {
     async getSelectedConfiguration(): Promise<DebugSessionOptions | undefined> {
         // providerType applies to dynamic configurations only
         if (!this._currentOptions?.providerType) {
-            return Promise.resolve(this._currentOptions);
+            return this._currentOptions;
         }
 
         // Refresh a dynamic configuration from the provider,
         // This allow providers to update properties before the execution e.g. program
-        const providerType = this._currentOptions.providerType;
-        const name = this._currentOptions.configuration.name;
+        const { providerType, configuration: { name } } = this._currentOptions;
         const configuration = await this.fetchDynamicDebugConfiguration(name, providerType);
 
         if (!configuration) {
@@ -217,7 +216,6 @@ export class DebugConfigurationManager {
 
     protected dynamicOptionsMatch(one: DebugSessionOptions, other: DebugSessionOptions): boolean {
         return one.providerType !== undefined
-        && other.providerType !== undefined
         && one.configuration.name === other.configuration.name
         && one.providerType === other.providerType;
     }
