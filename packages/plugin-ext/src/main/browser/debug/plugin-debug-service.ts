@@ -38,9 +38,9 @@ export class PluginDebugService implements DebugService {
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
     protected readonly toDispose = new DisposableCollection();
 
-    protected readonly onDidConfigurationProvidersChangedEmitter = new Emitter<void>();
+    protected readonly onDidChangeDebugConfigurationProvidersEmitter = new Emitter<void>();
     get onDidChangeDebugConfigurationProviders(): Event<void> {
-        return this.onDidConfigurationProvidersChangedEmitter.event;
+        return this.onDidChangeDebugConfigurationProvidersEmitter.event;
     }
 
     // maps session and contribution
@@ -84,7 +84,7 @@ export class PluginDebugService implements DebugService {
 
     // debouncing to send a single notification for multiple registrations at initialization time
     fireOnDidConfigurationProvidersChanged = debounce(() => {
-        this.onDidConfigurationProvidersChangedEmitter.fire();
+        this.onDidChangeDebugConfigurationProvidersEmitter.fire();
     }, 100);
 
     async debugTypes(): Promise<string[]> {
