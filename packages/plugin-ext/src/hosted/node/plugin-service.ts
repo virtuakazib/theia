@@ -47,6 +47,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     constructor(
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
+            console.error('+++++++ HostedPluginServer +++ constructor');
     }
 
     @postConstruct()
@@ -68,7 +69,13 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     async getDeployedPluginIds(): Promise<string[]> {
+        console.error('+++++++ HostedPluginServer +++ getDeployedPluginIds ');
+        
+        console.time('+++++++ HostedPluginServer +++ getDeployedPluginIds ');
+        
         const backendMetadata = await this.deployerHandler.getDeployedBackendPluginIds();
+        
+        console.timeEnd('+++++++ HostedPluginServer +++ getDeployedPluginIds ');
         if (backendMetadata.length > 0) {
             this.hostedPlugin.runPluginServer();
         }

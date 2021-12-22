@@ -59,8 +59,26 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     }
 
     async getDeployedBackendPluginIds(): Promise<string[]> {
+        console.error('!!!!!!!!! HostedPluginDeployerHandler +++ getDeployedBackendPluginIds ');
+
+        const currentDate = new Date();
+        console.error('!!!!!!!!! HostedPluginDeployerHandler !!! await ',
+          currentDate.getMinutes(),
+          ',',
+          currentDate.getSeconds()
+        );
+        console.time('!!! HostedPluginDeployerHandler !!! await backendPluginsMetadataDeferred  !!! ');
+
         // await first deploy
         await this.backendPluginsMetadataDeferred.promise;
+
+        const resolveDate = new Date();
+        console.error('!!!!!!!!! HostedPluginDeployerHandler !!! after await ',
+        resolveDate.getMinutes(),
+          ',',
+          resolveDate.getSeconds()
+        );
+        console.timeEnd('!!! HostedPluginDeployerHandler !!! await backendPluginsMetadataDeferred  !!! ');
         // fetch the last deployed state
         return [...this.deployedBackendPlugins.keys()];
     }
@@ -102,9 +120,26 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     }
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+        const currentDate = new Date();
+        console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! ', currentDate.getMinutes(),
+        ',',
+        currentDate.getSeconds()
+      );
         for (const plugin of backendPlugins) {
+            console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugin ', plugin.path);
+            console.time('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
+            
             await this.deployPlugin(plugin, 'backend');
+            
+            console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! AFTER DEPLOY ', plugin.path);
+            console.timeEnd('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
         }
+        
+        const resolveDate = new Date();
+        console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! RESOLVE ', resolveDate.getMinutes(),
+        ',',
+        resolveDate.getSeconds()
+      );
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
     }
