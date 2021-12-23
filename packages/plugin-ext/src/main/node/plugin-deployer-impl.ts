@@ -118,17 +118,29 @@ export class PluginDeployerImpl implements PluginDeployer {
         const userEntries: string[] = [];
         const context: PluginDeployerStartContext = { userEntries, systemEntries };
 
+        console.time('==== !!!!!!!!! PluginDeployerImpl !!! on will start === ');
         for (const contribution of this.participants.getContributions()) {
             if (contribution.onWillStart) {
                 await contribution.onWillStart(context);
             }
         }
+        console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! on will start === ');
+
+        const resolvingPluginsDate = new Date();
+        console.error('!!!!!!!!! PluginDeployerImpl !!! before resolving plugins !!! ', resolvingPluginsDate.getMinutes(),
+            ',',
+            resolvingPluginsDate.getSeconds()
+        );
 
         const startDeployTime = performance.now();
+
+        console.time('==== !!!!!!!!! PluginDeployerImpl !!! resolving plugins === ');
         const [userPlugins, systemPlugins] = await Promise.all([
             this.resolvePlugins(context.userEntries, PluginType.User),
             this.resolvePlugins(context.systemEntries, PluginType.System)
         ]);
+
+        console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! resolving plugins === ');
 
         const currentDate2 = new Date();
         console.error('!!!!!!!!! PluginDeployerImpl !!! before deploy !!! ', currentDate2.getMinutes(),
