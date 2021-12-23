@@ -89,9 +89,16 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     protected async doStart(): Promise<void> {
+        const currentDate = new Date();
+        console.error('!!!!!!!!! PluginDeployerImpl !!! doStart !!! ', currentDate.getMinutes(),
+            ',',
+            currentDate.getSeconds()
+        );
 
+        console.time('==== !!!!!!!!! PluginDeployerImpl !!! init resolvers === ');
         // init resolvers
         await this.initResolvers();
+        console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! init resolvers === ');
 
         // check THEIA_DEFAULT_PLUGINS or THEIA_PLUGINS env var
         const defaultPluginsValue = process.env.THEIA_DEFAULT_PLUGINS || undefined;
@@ -122,6 +129,12 @@ export class PluginDeployerImpl implements PluginDeployer {
             this.resolvePlugins(context.userEntries, PluginType.User),
             this.resolvePlugins(context.systemEntries, PluginType.System)
         ]);
+
+        const currentDate2 = new Date();
+        console.error('!!!!!!!!! PluginDeployerImpl !!! before deploy !!! ', currentDate2.getMinutes(),
+            ',',
+            currentDate2.getSeconds()
+        );
         await this.deployPlugins([...userPlugins, ...systemPlugins]);
         this.logMeasurement('Deploy plugins list', startDeployTime);
     }
@@ -133,6 +146,11 @@ export class PluginDeployerImpl implements PluginDeployer {
     }
 
     async deploy(pluginEntry: string, type: PluginType = PluginType.System): Promise<void> {
+        const currentDate = new Date();
+        console.error('!!!!!!!!! PluginDeployerImpl !!! deploy !!! ', currentDate.getMinutes(),
+            ',',
+            currentDate.getSeconds()
+        );
         const startDeployTime = performance.now();
         await this.deployMultipleEntries([pluginEntry], type);
         this.logMeasurement('Deploy plugin entry', startDeployTime);
@@ -206,6 +224,11 @@ export class PluginDeployerImpl implements PluginDeployer {
      * deploy all plugins that have been accepted
      */
     async deployPlugins(pluginsToDeploy: PluginDeployerEntry[]): Promise<any> {
+        const currentDate = new Date();
+        console.error('!!!!!!!!! PluginDeployerImpl !!! deployPlugins !!! ', currentDate.getMinutes(),
+            ',',
+            currentDate.getSeconds()
+        );
         const acceptedPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted());
         const acceptedFrontendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.FRONTEND));
         const acceptedBackendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
