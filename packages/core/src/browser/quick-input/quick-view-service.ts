@@ -48,7 +48,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
         this.items.push(quickOpenItem);
         this.items.sort((a, b) => {
             if (!a.label) {
-                console.error('+++++++ QuickViewService === no label ', a);
+                // console.error('+++++++ QuickViewService === no label ', a);
             }
             return a.label!.localeCompare(b.label!);
         });

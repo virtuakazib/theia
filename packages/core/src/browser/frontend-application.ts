@@ -129,7 +129,19 @@ export class FrontendApplication {
      * - reveal the application shell if it was hidden by a startup indicator
      */
     async start(): Promise<void> {
+        const currentDate = new Date();
+        console.error('+++++++++++++++++++++++++++++ Frontend APP +++ start !!! ', currentDate.getMinutes(),
+            ',',
+            currentDate.getSeconds()
+        );
         await this.startContributions();
+
+        const startedDate = new Date();
+        console.error('+++ Frontend APP +++ ALL STARTED !!! ', startedDate.getMinutes(),
+            ',',
+            startedDate.getSeconds()
+        );
+        
         this.stateService.state = 'started_contributions';
 
         const host = await this.getHost();
@@ -145,6 +157,12 @@ export class FrontendApplication {
         await this.revealShell(host);
         this.registerEventListeners();
         this.stateService.state = 'ready';
+    }
+
+    async wait(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(() => { resolve(undefined) }, ms);
+        });
     }
 
     /**
@@ -318,6 +336,7 @@ export class FrontendApplication {
      */
     protected async startContributions(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
+            console.error('+++ Frontend APP +++ initializing ', contribution.constructor.name);
             if (contribution.initialize) {
                 try {
                     await this.measure(contribution.constructor.name + '.initialize',
@@ -330,6 +349,7 @@ export class FrontendApplication {
         }
 
         for (const contribution of this.contributions.getContributions()) {
+            console.error('+++ Frontend APP +++ configuring ', contribution.constructor.name);
             if (contribution.configure) {
                 try {
                     await this.measure(contribution.constructor.name + '.configure',

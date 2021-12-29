@@ -62,6 +62,13 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     @postConstruct()
     protected init(): void {
+        const currentdate = new Date();
+        console.error(
+            '////////////////////////  FileNavigatorWidget +++ init ',
+            currentdate.getMinutes(),
+            ',',
+            currentdate.getSeconds()
+        );
         super.init();
         // This ensures that the context menu command to hide this widget receives the label 'Folders'
         // regardless of the name of workspace. See ViewContainer.updateToolbarItems.
@@ -145,6 +152,13 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
+        const currentdate = new Date();
+        console.error(
+            '////////////////////////  FileNavigatorWidget +++ RENDER TREE ',
+            currentdate.getMinutes(),
+            ',',
+            currentdate.getSeconds()
+        );
         if (this.model.root && this.isEmptyMultiRootWorkspace(model)) {
             return this.renderEmptyMultiRootWorkspace();
         }

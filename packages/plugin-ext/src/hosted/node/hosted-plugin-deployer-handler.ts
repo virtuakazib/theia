@@ -121,19 +121,23 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
         const currentDate = new Date();
-        console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! ', currentDate.getMinutes(),
+        console.error('+++++++++++++++++++++++++++++ HostedPluginDeployerHandler +++ deployBackendPlugins !!! ', currentDate.getMinutes(),
             ',',
             currentDate.getSeconds()
         );
         for (const plugin of backendPlugins) {
             console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugin ', plugin.path());
-            console.time('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
+            // console.time('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
 
             await this.deployPlugin(plugin, 'backend');
 
-            console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! AFTER DEPLOY ', plugin.path());
-            console.timeEnd('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
+            // console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! AFTER DEPLOY ', plugin.path());
+            // console.timeEnd('!!! HostedPluginDeployerHandler !!!deployBackendPlugin ');
         }
+        
+        // console.error('+++++++++++++++++++++++++============== HostedPluginDeployerHandler !!!deployBackendPlugin !!! BEFORE WAIT');
+        // await this.wait(60000);
+        // console.error('+++++++++++++++++++++++++============== HostedPluginDeployerHandler !!!deployBackendPlugin !!! AFTER WAIT');
 
         const resolveDate = new Date();
         console.error('!!!!!!!!! HostedPluginDeployerHandler +++ deployBackendPlugins !!! RESOLVE ', resolveDate.getMinutes(),
@@ -142,6 +146,12 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         );
         // resolve on first deploy
         this.backendPluginsMetadataDeferred.resolve(undefined);
+    }
+
+    async wait(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(() => { resolve(undefined) }, ms);
+        });
     }
 
     /**
