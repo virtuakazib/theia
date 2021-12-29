@@ -152,13 +152,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
-        const currentdate = new Date();
-        console.error(
-            '////////////////////////  FileNavigatorWidget +++ RENDER TREE ',
-            currentdate.getMinutes(),
-            ',',
-            currentdate.getSeconds()
-        );
         if (this.model.root && this.isEmptyMultiRootWorkspace(model)) {
             return this.renderEmptyMultiRootWorkspace();
         }

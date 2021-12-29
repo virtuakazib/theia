@@ -135,10 +135,19 @@ export class PluginDeployerImpl implements PluginDeployer {
         const startDeployTime = performance.now();
 
         console.time('==== !!!!!!!!! PluginDeployerImpl !!! resolving plugins === ');
-        const [userPlugins, systemPlugins] = await Promise.all([
-            this.resolvePlugins(context.userEntries, PluginType.User),
-            this.resolvePlugins(context.systemEntries, PluginType.System)
-        ]);
+
+        console.time('==== !!!!!!!!! PluginDeployerImpl !!! resolving USER plugins === ');
+        const userPlugins = await this.resolvePlugins(context.userEntries, PluginType.User);
+        console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! resolving USER plugins === ');
+
+        console.time('==== !!!!!!!!! PluginDeployerImpl !!! resolving SYSTEM plugins === ');
+        const systemPlugins = await this.resolvePlugins(context.systemEntries, PluginType.System);
+        console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! resolving SYSTEM plugins === ');
+
+        // const [userPlugins, systemPlugins] = await Promise.all([
+        //     this.resolvePlugins(context.userEntries, PluginType.User),
+        //     this.resolvePlugins(context.systemEntries, PluginType.System)
+        // ]);
 
         console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! resolving plugins === ');
 
@@ -317,7 +326,9 @@ export class PluginDeployerImpl implements PluginDeployer {
             // create context object
             const context = new PluginDeployerResolverContextImpl(foundPluginResolver, pluginId);
 
+            console.time(`==== !!!!!!!!! PluginDeployerImpl !!! resolve plugin === ${pluginId}`);
             await foundPluginResolver.resolve(context);
+            console.timeEnd(`==== !!!!!!!!! PluginDeployerImpl !!! resolve plugin === ${pluginId}`);
 
             context.getPlugins().forEach(entry => {
                 entry.type = type;
