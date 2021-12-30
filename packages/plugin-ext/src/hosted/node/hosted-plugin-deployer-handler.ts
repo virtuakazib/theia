@@ -95,10 +95,12 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
      * @throws never! in order to isolate plugin deployment
      */
     async getPluginDependencies(entry: PluginDeployerEntry): Promise<PluginDependencies | undefined> {
+        console.error('!!!!!!!!! HostedPluginDeployerHandler !!! getPluginDependencies ', entry.id);
         const pluginPath = entry.path();
         try {
             const manifest = await this.reader.readPackage(pluginPath);
             if (!manifest) {
+                console.error('!!!!!!!!! HostedPluginDeployerHandler !!! getPluginDependencies !!! RETURN ', entry.id);
                 return undefined;
             }
             const metadata = this.reader.readMetadata(manifest);
@@ -106,6 +108,8 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             if (entry.type !== PluginType.System) {
                 console.error('!!!!!!!!! HostedPluginDeployerHandler !!! SKIP SYSTEM PLUGIN ', entry.id);
                 dependencies.mapping = this.reader.readDependencies(manifest);
+            } else {
+                console.error('!!!!!!!!! HostedPluginDeployerHandler !!! NOT SKIP PLUGIN ', entry.id);
             }
             return dependencies;
         } catch (e) {

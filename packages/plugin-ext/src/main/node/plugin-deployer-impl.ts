@@ -195,6 +195,7 @@ export class PluginDeployerImpl implements PluginDeployer {
      * ```
      */
     async resolvePlugins(pluginEntries: ReadonlyArray<string>, type: PluginType): Promise<PluginDeployerEntry[]> {
+        console.error('==== !!!!!!!!! PluginDeployerImpl !!! resolving plugins !!! ');
         const visited = new Set<string>();
         const pluginsToDeploy = new Map<string, PluginDeployerEntry>();
 
@@ -215,10 +216,20 @@ export class PluginDeployerImpl implements PluginDeployer {
             await Promise.all(workload.map(async current => {
                 try {
                     const pluginDeployerEntries = await this.resolvePlugin(current, type);
+
+                    console.time('==== !!!!!!!!! PluginDeployerImpl !!! applyFileHandlers === ');
                     await this.applyFileHandlers(pluginDeployerEntries);
+                    console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! applyFileHandlers === ');
+
+                    console.time('==== !!!!!!!!! PluginDeployerImpl !!! applyDirectoryFileHandlers === ');
                     await this.applyDirectoryFileHandlers(pluginDeployerEntries);
+                    console.timeEnd('==== !!!!!!!!! PluginDeployerImpl !!! applyDirectoryFileHandlers === ');
+
                     for (const deployerEntry of pluginDeployerEntries) {
+                        console.time(`==== !!!!!!!!! PluginDeployerImpl !!! getPluginDependencies === ${deployerEntry.id}`);
                         const dependencies = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
+                        console.timeEnd(`==== !!!!!!!!! PluginDeployerImpl !!! getPluginDependencies === ${deployerEntry.id}`);
+
                         if (dependencies && !pluginsToDeploy.has(dependencies.metadata.model.id)) {
                             pluginsToDeploy.set(dependencies.metadata.model.id, deployerEntry);
                             if (dependencies.mapping) {
