@@ -47,10 +47,7 @@ export class QuickViewService implements QuickAccessContribution, QuickAccessPro
         };
         this.items.push(quickOpenItem);
         this.items.sort((a, b) => {
-            if (!a.label) {
-                // console.error('+++++++ QuickViewService === no label ', a);
-            }
-            return a.label!.localeCompare(b.label!);
+            return a.label ? a.label.localeCompare(b.label) : 1;
         });
 
         return Disposable.create(() => {

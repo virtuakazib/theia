@@ -17,7 +17,7 @@
 import * as fs from '@theia/core/shared/fs-extra';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
-import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin, PluginDependencies, Localization } from '../../common/plugin-protocol';
+import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin, PluginDependencies, Localization, PluginType } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
@@ -103,7 +103,10 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             }
             const metadata = this.reader.readMetadata(manifest);
             const dependencies: PluginDependencies = { metadata };
-            dependencies.mapping = this.reader.readDependencies(manifest);
+            if (entry.type !== PluginType.System) {
+                console.error('!!!!!!!!! HostedPluginDeployerHandler !!! SKIP SYSTEM PLUGIN ', entry.id);
+                dependencies.mapping = this.reader.readDependencies(manifest);
+            }
             return dependencies;
         } catch (e) {
             console.error(`Failed to load plugin dependencies from '${pluginPath}' path`, e);

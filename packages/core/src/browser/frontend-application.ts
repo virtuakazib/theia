@@ -141,7 +141,7 @@ export class FrontendApplication {
             ',',
             startedDate.getSeconds()
         );
-        
+
         this.stateService.state = 'started_contributions';
 
         const host = await this.getHost();
@@ -336,7 +336,6 @@ export class FrontendApplication {
      */
     protected async startContributions(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
-            console.error('+++ Frontend APP +++ initializing ', contribution.constructor.name);
             if (contribution.initialize) {
                 try {
                     await this.measure(contribution.constructor.name + '.initialize',
@@ -349,7 +348,6 @@ export class FrontendApplication {
         }
 
         for (const contribution of this.contributions.getContributions()) {
-            console.error('+++ Frontend APP +++ configuring ', contribution.constructor.name);
             if (contribution.configure) {
                 try {
                     await this.measure(contribution.constructor.name + '.configure',
