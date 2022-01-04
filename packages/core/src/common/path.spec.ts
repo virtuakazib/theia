@@ -356,4 +356,60 @@ describe('Path', () => {
         });
 
     });
+
+    describe('fsPath#undefined', () => {
+        it('should retain windows style path', () => {
+            const path = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath()).eq(path);
+        });
+
+        it('should create windows style path with slashes', () => {
+            const path = 'C:/path/to/file.txt';
+            const expected = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath()).eq(expected);
+        });
+
+        it('should retain posix style path', () => {
+            const path = '/path/to/file.txt';
+            expect(new Path(path).fsPath()).eq(path);
+        });
+    });
+
+    describe('fsPath#windows', () => {
+        it('should retain windows style path', () => {
+            const path = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(path);
+        });
+
+        it('should create windows style path with slashes', () => {
+            const path = 'C:/path/to/file.txt';
+            const expected = 'C:\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(expected);
+        });
+
+        it('should create windows style path from posix', () => {
+            const path = '/path/to/file.txt';
+            const expected = '\\path\\to\\file.txt';
+            expect(new Path(path).fsPath(false)).eq(expected);
+        });
+    });
+
+    describe('fsPath#posix', () => {
+        it('should retain posix style path', () => {
+            const path = '/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(path);
+        });
+
+        it('should create posix style path from windows with slashes', () => {
+            const path = 'C:/path/to/file.txt';
+            const expected = '/c:/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(expected);
+        });
+
+        it('should create posix style path from windows', () => {
+            const path = 'C:\\path\\to\\file.txt';
+            const expected = '/c:/path/to/file.txt';
+            expect(new Path(path).fsPath(true)).eq(expected);
+        });
+    });
 });

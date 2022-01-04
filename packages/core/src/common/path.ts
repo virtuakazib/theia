@@ -71,6 +71,35 @@ export class Path {
     }
 
     /**
+     * Creates a windows path from the given path string.
+     * A windows path uses an upper case drive letter and backwards slashes.
+     * @param path The input path
+     * @returns Windows style path
+     */
+    static windowsPath(path: string): string {
+        const offset = path.charAt(0) === '/' ? 1 : 0;
+        if (path.charAt(offset + 2) === '/' && path.charAt(offset + 1) === ':') {
+            const driveLetter = path.charAt(offset).toUpperCase();
+            const substring = path.substring(offset + 1).replace(/\//g, '\\');
+            return `${driveLetter}${substring}`;
+        }
+        return path.replace(/\//g, '\\');
+    }
+
+    /**
+     * Creates a posix path from the given path string.
+     * A posix path always starts with a forward slash and contains only forward slashes.
+     * @param path The input path
+     * @returns A posix style path
+     */
+    static posixPath(path: string): string {
+        if (path.charAt(0) !== '/') {
+            path = '/' + path;
+        }
+        return path;
+    }
+
+    /**
      * Tildify path, replacing `home` with `~` if user's `home` is present at the beginning of the path.
      * This is a non-operation for Windows.
      *
@@ -204,6 +233,26 @@ export class Path {
 
     toString(): string {
         return this.raw;
+    }
+
+    /**
+     * Converts the current path into a file system path.
+     * @param posix Indicates posix or windows file path.
+     * If `undefined`, the format will be determined by whether the raw path starts with a drive letter.
+     * @returns A file system path.
+     */
+    fsPath(posix?: boolean): string {
+        if (posix === undefined) {
+            if (this.raw.charAt(1) === ':' || this.raw.charAt(2) === ':') {
+                return Path.windowsPath(this.raw);
+            } else {
+                return Path.posixPath(this.raw);
+            }
+        } else if (posix) {
+            return Path.posixPath(this.raw);
+        } else {
+            return Path.windowsPath(this.raw);
+        }
     }
 
     relative(path: Path): Path | undefined {
