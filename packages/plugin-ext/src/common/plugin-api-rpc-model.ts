@@ -134,8 +134,8 @@ export interface SingleEditOperation {
 }
 
 export interface Command {
-    id: string;
-    title: string;
+    command: string;
+    title?: string;
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments?: any[];
